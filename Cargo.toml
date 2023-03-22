@@ -1,0 +1,24 @@
+[package]
+name = "gpmf"
+version = "0.1.0"
+edition = "2021"
+description = "WIP gpmf implementation"
+authors = ["Apps4u_co"]
+#homepage="http://apps4u.co/"
+documentation="https://docs.rs/gpmf"
+repository="https://github.com/apps4uco/gpmf"
+keywords = ["gpmf","gopro","hero","sensors","geospatial"]
+categories = ["data-structures","encoding","parser-implementations"]
+license = "MIT OR Apache-2.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow="1.0.70"
+nom = "7.1.3"
+nom-bufreader = "0.2.0"
+num_enum = "0.5.11"
+mp4="0.13.0"
+strum_macros = "0.24.3"
+
+strum = { version = "0.24.1", features = ["derive"] }
