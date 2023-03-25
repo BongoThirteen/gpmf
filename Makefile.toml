@@ -29,7 +29,7 @@ CARGO_MAKE_GIT_BRANCH="main"
 command = "cargo"
 args = [ "readme","-o","README.md" ]
 
-[tasks.pre-publish]
+[tasks.pre-git-add]
 dependencies = ["generate-readme"]
 
 # TODO figure out why preconditions on default build-publish-flow are not met

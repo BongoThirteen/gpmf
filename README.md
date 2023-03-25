@@ -14,7 +14,7 @@ WIP: Currently successfully parses all raw test data and logs the results.
 * Memory safe parser
 * Zero security vulnerabilities. Avoid problems found in other tools e.g.: [GoPro GPMF-parser Vulnerabilities](https://blog.inhq.net/posts/gopro-gpmf-parser-vuln-1/)
 * Never generate exceptions, i.e.: Should never panic.
-* Should pass fuzz tests i.e.: handle junk data
+* Should pass fuzz tests i.e.: handle corrupt or junk data
 * Should avoid DOS attacks. Possibly Add max buffer lengths.
 * Gracefully recover from errors
 * Handle unknown tags
@@ -39,7 +39,6 @@ If you have a file that is not handled please submit an issue, attaching the raw
 ## Example
 
 ```rust
-use std::io;
 use std::path::Path;
 use gpmf::byteorder_gpmf::parse_gpmf;
 
@@ -55,7 +54,6 @@ fn main() -> anyhow::Result<()> {
 ## Example with Logging
 
 ```rust
-use std::io;
 use std::path::Path;
 use gpmf::byteorder_gpmf::parse_gpmf;
 use tracing::Level;
@@ -63,11 +61,9 @@ use tracing_subscriber::FmtSubscriber;
 
 fn main() -> anyhow::Result<()> {
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
+        .with_max_level(Level::DEBUG)
         .finish();
-
-    tracing::subscriber::set_global_default(subscriber)
-                .expect("setting default subscriber failed");
+    tracing::subscriber::set_global_default(subscriber)?;
 
     let path = Path::new("samples/Fusion.raw");
     let text = std::fs::read(path)?;
