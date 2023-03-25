@@ -1,17 +1,15 @@
 # Useful commands
 
+# cargo make
+
 # Watches for any file change and if any change is detected, it will invoke the default flow.
-# cargo watch-flow
+# cargo make watch-flow
 
 # Full sanity testing flow
 # cargo make build-flow
 
-# If env vars set can integrate with git
-# cargo make build-publish-flow
-#  "COMMIT_MSG",
-#  "GITHUB_API_TOKEN",
-#  "GITHUB_REPO_NAME",
-#   set "CARGO_MAKE_GIT_BRANCH" if not "master"
+# Publish
+# env COMMIT_MSG="Put your commit MESSAGE here"  cargo make build-publish-flow
 
 # Run git add .
 # cargo make git-add
@@ -19,9 +17,10 @@
 [env]
 #This is required because on our development machines we mirror crates-io to speed up builds, and allow offline development
 CARGO_MAKE_CARGO_PUBLISH_FLAGS="--registry crates-io"
+
 #CARGO_MAKE_GIT_PUSH_ARGS
-#GITHUB_API_TOKEN=""
-#GITHUB_REPO_NAME=""
+GITHUB_API_TOKEN="xxx"
+GITHUB_REPO_NAME="xxx"
 CARGO_MAKE_GIT_BRANCH="main"
 
 [tasks.generate-readme]
@@ -31,6 +30,7 @@ args = [ "readme","-o","README.md" ]
 [tasks.pre-publish]
 dependencies = ["generate-readme"]
 
+# TODO figure out why preconditions on default build-publish-flow are not met
 [tasks.build-publish-flow]
 dependencies = [
     "delete-lock",

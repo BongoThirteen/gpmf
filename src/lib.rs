@@ -32,6 +32,7 @@
 //! * [ ] Handle image exif data
 //! * [ ] Writer
 
+#![warn(missing_docs)]
 #![feature(cursor_remaining)]
 #![feature(buf_read_has_data_left)]
 
@@ -59,58 +60,57 @@ pub struct KeyValue {
 #[repr(u8)]
 pub enum Type {
     /// | **b** | single byte signed integer | int8\_t | -128 to 127 |
-    // #[strum(serialize="b")]
     I8 = b'b',
+
     /// | **B** | single byte unsigned integer | uint8\_t | 0 to 255 |
-    // #[strum(serialize="B")]
     U8 = b'B',
+
     /// | **c** | single byte &#39;c&#39; style ASCII character string | char | Optionally NULL terminated - size/repeat sets the length |
-    // #[strum(serialize="c")]
     Char = b'c',
+
     /// | **d** | 64-bit double precision (IEEE 754) | double |   |
-    // #[strum(serialize="d")]
     F64 = b'd',
+
     /// | **f** | 32-bit float (IEEE 754) | float |   |
-    // #[strum(serialize="f")]
     F32 = b'f',
+
     /// | **F** | 32-bit four character key -- FourCC | char fourcc\[4\] |   |
-    // #[strum(serialize="F")]
     FourCC = b'F',
+
     /// | **G** | 128-bit ID (like UUID) | uint8\_t guid\[16\] |   |
-    // #[strum(serialize="G")]
     U128 = b'G',
+
     /// | **j** | 64-bit signed unsigned number | int64\_t |   |
-    // #[strum(serialize="j")]
     I64 = b'j',
+
     /// | **J** | 64-bit unsigned unsigned number | uint64\_t |   |
-    // #[strum(serialize="J")]
     U64 = b'J',
+
     /// | **l** | 32-bit signed integer | int32\_t |   |
-    // #[strum(serialize="l")]
     I32 = b'l',
+
     /// | **L** | 32-bit unsigned integer | uint32\_t |   |
-    // #[strum(serialize="L")]
     U32 = b'L',
+
     /// | **q** | 32-bit Q Number Q15.16 | uint32\_t | 16-bit integer (A) with 16-bit fixed point (B) for A.B value (range -32768.0 to 32767.99998) |
-    // #[strum(serialize="q")]
     Fixed32 = b'q',
+
     /// | **Q** | 64-bit Q Number Q31.32 | uint64\_t | 32-bit integer (A) with 32-bit fixed point (B) for A.B value. |
-    // #[strum(serialize="Q")]
     Fixed64 = b'Q',
+
     /// | **s** | 16-bit signed integer | int16\_t | -32768 to 32768 |
-    // #[strum(serialize="s")]
     I16 = b's',
+
     /// | **S** | 16-bit unsigned integer | uint16\_t | 0 to 65536 |
-    // #[strum(serialize="S")]
     U16 = b'S',
+
     /// | **U** | UTC Date and Time string | char utcdate\[16\] | Date + UTC Time format yymmddhhmmss.sss - (years 20xx covered) |
-    // #[strum(serialize="U")]
     Date = b'U',
+
     /// | **?** | data structure is complex | TYPE | Structure is defined with a preceding TYPE |
-    // #[strum(serialize="?")]
     Complex = b'?',
+
     /// | **null** | Nested metadata | uint32\_t | The data within is GPMF structured KLV data |
-    // #[strum(serialize="\0")]
     Nested = b'\0',
 }
 
@@ -142,50 +142,53 @@ impl Type {
 /// This enum is so that the user can intepret fields that change order and or sign
 #[derive(Debug, PartialEq, EnumString, EnumIter, Display)]
 pub enum Model {
+    /// Herp 5
     Hero5,
     //TODO add other common camera models
+    /// Other model
     Other(String),
 }
 
 /// The value of the data,
 #[derive(Debug)]
 pub enum Value {
-    //| **b** | single byte signed integer | int8\_t | -128 to 127 |
+    ///| **b** | single byte signed integer | int8\_t | -128 to 127 |
     I8(i8),
-    // | **B** | single byte unsigned integer | uint8\_t | 0 to 255 |
+    /// | **B** | single byte unsigned integer | uint8\_t | 0 to 255 |
     U8(u8),
-    // | **c** | single byte &#39;c&#39; style ASCII character string | char | Optionally NULL terminated - size/repeat sets the length |
+    /// | **c** | single byte &#39;c&#39; style ASCII character string | char | Optionally NULL terminated - size/repeat sets the length |
     Char(char),
+    /// | **c** | single byte &#39;c&#39; style ASCII character string | char | Optionally NULL terminated - size/repeat sets the length |
     String(String),
-    // | **d** | 64-bit double precision (IEEE 754) | double |   |
+    /// | **d** | 64-bit double precision (IEEE 754) | double |   |
     F64(f64),
-    // | **f** | 32-bit float (IEEE 754) | float |   |
+    /// | **f** | 32-bit float (IEEE 754) | float |   |
     F32(f32),
-    // | **F** | 32-bit four character key -- FourCC | char fourcc\[4\] |   |
+    /// | **F** | 32-bit four character key -- FourCC | char fourcc\[4\] |   |
     FourCC(FourCC),
-    // | **G** | 128-bit ID (like UUID) | uint8\_t guid\[16\] |   |
+    /// | **G** | 128-bit ID (like UUID) | uint8\_t guid\[16\] |   |
     U128(u128),
-    // | **j** | 64-bit signed unsigned number | int64\_t |   |
+    /// | **j** | 64-bit signed unsigned number | int64\_t |   |
     I64(i64),
-    // | **J** | 64-bit unsigned unsigned number | uint64\_t |   |
+    /// | **J** | 64-bit unsigned unsigned number | uint64\_t |   |
     U64(u64),
-    // | **l** | 32-bit signed integer | int32\_t |   |
+    /// | **l** | 32-bit signed integer | int32\_t |   |
     I32(i32),
-    // | **L** | 32-bit unsigned integer | uint32\_t |   |
+    /// | **L** | 32-bit unsigned integer | uint32\_t |   |
     U32(u32),
-    // | **q** | 32-bit Q Number Q15.16 | uint32\_t | 16-bit integer (A) with 16-bit fixed point (B) for A.B value (range -32768.0 to 32767.99998) |
+    /// | **q** | 32-bit Q Number Q15.16 | uint32\_t | 16-bit integer (A) with 16-bit fixed point (B) for A.B value (range -32768.0 to 32767.99998) |
     Fixed32(I16F16),
-    // | **Q** | 64-bit Q Number Q31.32 | uint64\_t | 32-bit integer (A) with 32-bit fixed point (B) for A.B value. |
+    /// | **Q** | 64-bit Q Number Q31.32 | uint64\_t | 32-bit integer (A) with 32-bit fixed point (B) for A.B value. |
     Fixed64(I32F32),
-    // | **s** | 16-bit signed integer | int16\_t | -32768 to 32768 |
+    /// | **s** | 16-bit signed integer | int16\_t | -32768 to 32768 |
     I16(i16),
-    // | **S** | 16-bit unsigned integer | uint16\_t | 0 to 65536 |
+    /// | **S** | 16-bit unsigned integer | uint16\_t | 0 to 65536 |
     U16(u16),
-    // | **U** | UTC Date and Time string | char utcdate\[16\] | Date + UTC Time format yymmddhhmmss.sss - (years 20xx covered) |
+    /// | **U** | UTC Date and Time string | char utcdate\[16\] | Date + UTC Time format yymmddhhmmss.sss - (years 20xx covered) |
     Date(DateTime<Utc>),
-    // | **?** | data structure is complex | TYPE | Structure is defined with a preceding TYPE |
+    /// | **?** | data structure is complex | TYPE | Structure is defined with a preceding TYPE |
     Complex(Vec<Value>),
-    // | **null** | Nested metadata | uint32\_t | The data within is GPMF structured KLV data |
+    /// | **null** | Nested metadata | uint32\_t | The data within is GPMF structured KLV data |
     Nested(Vec<KeyValue>),
 }
 
@@ -222,7 +225,6 @@ impl Value {
 /// Currently warnings are logged for unsupported tags.
 #[derive(Debug, PartialEq, EnumString, EnumIter, Display)]
 pub enum FourCC {
-    // #[strum(serialize = "blue", serialize = "b")]
     ///unique device source for metadata
     /// Each connected device starts with DEVC. A GoPro camera or Karma drone would have their own DEVC for nested metadata to follow. |
     #[strum(serialize = "DEVC", to_string = "Device")]
@@ -280,173 +282,172 @@ pub enum FourCC {
     #[strum(serialize = "EMPT", to_string = "Empty Payload Count")]
     EMPT,
 
+    /// Start Time
     #[strum(serialize = "TICK", to_string = "Start Timestamp")]
     TICK,
+    /// End time
     #[strum(serialize = "TOCK", to_string = "End Timestamp")]
     TOCK,
 
-    // thermal clock drift for temperature sensitive calibrations.
+    /// thermal clock drift for temperature sensitive calibrations.
     #[strum(serialize = "TMPC", to_string = "Temp")]
     TMPC,
 
     //HERO5 Black and Session
-
-    //3-axis accelerometer
+    ///3-axis accelerometer
     // Hero5: Data order Z,X,Y
     // Fusion: Data order -Y,X,Z
     // Hero 6 Data order Y,-X,Z
     #[strum(serialize = "ACCL", to_string = "Accel")]
     ACCL,
-    // 3-axis gyroscope
+    /// 3-axis gyroscope
     // Hero5: Data order Z,X,Y
     // Fusion: Data order -Y,X,Z
     // Hero6 Data order Y,-X,Z
     #[strum(serialize = "GYRO", to_string = "Gyro")]
     GYRO,
-    //Image sensor gain
+    ///Image sensor gain
     #[strum(serialize = "ISOG", to_string = "Image Sensor Gain")]
     ISOG,
-    //Exposure time
+    /// Exposure time
     #[strum(serialize = "SHUT", to_string = "Exposure Time")]
     SHUT,
 
     //HERO5 Black with GPS Enabled Adds
-
-    //latitude, longitude, altitude (WGS 84), 2D ground speed, and 3D speed
+    /// latitude, longitude, altitude (WGS 84), 2D ground speed, and 3D speed
     #[strum(serialize = "GPS5", to_string = "GPS 5")]
     GPS5,
 
-    //UTC time and data from GPS
+    ///UTC time and data from GPS
     #[strum(serialize = "GPSU", to_string = "GPS UTC")]
     GPSU,
-    //GPS Fix Within the GPS stream: 0 - no lock, 2 or 3 - 2D or 3D Lock
+    ///GPS Fix Within the GPS stream: 0 - no lock, 2 or 3 - 2D or 3D Lock
     #[strum(serialize = "GPSF", to_string = "GPS Fix")]
     GPSF,
-    //GPS Precision - Dilution of Precision (DOP x100) Within the GPS stream, under 500 is good
+    ///GPS Precision - Dilution of Precision (DOP x100) Within the GPS stream, under 500 is good
     #[strum(serialize = "GPSP", to_string = "GPS DOP")]
     GPSP,
 
     //Fusion Adds and Changes
-    //magnetometer
+    ///Magnetometer
     //GoPro MAX  Camera pointing direction x,y,z (valid in v2.0 firmware.)
     #[strum(serialize = "MAGN", to_string = "Magnetometer")]
     MAGN,
 
     //FUSION
-    //microsecond timestamps
+    /// Microsecond Timestamps
     #[strum(serialize = "STMP", to_string = "Timestamp")]
     STMP,
 
     //HERO6 Black
-    //Face detection boundaring boxes
+    /// Face detection boundaring boxes
     // Herd6 struct ID,x,y,w,h -- not supported in HEVC modes
     // Hero 7 struct ID,x,y,w,h,unused[17],smile
     // Hero 8 struct ID,x,y,w,h,confidence %,smile %
     // Hero 10 struct ver,confidence %,ID,x,y,w,h,smile %, blink %
     #[strum(serialize = "FACE", to_string = "Face Bbox")]
     FACE,
-    // Faces counted per frame
+    /// Faces counted per frame
     #[strum(serialize = "FCNM", to_string = "Face count per Frame")]
     FCNM,
 
-    #[strum(serialize = "FSTM", to_string = "UNDOCUMENTED Face something ???")]
-    FSTM,
-
-    //Sensor ISO replaces ISOG, has the same function
+    //#[strum(serialize = "FSTM", to_string = "UNDOCUMENTED Face something ???")]
+    //FSTM,
+    /// Sensor ISO replaces ISOG, has the same function
     #[strum(serialize = "ISOE", to_string = "Image Sensor Gain E")]
     ISOE,
 
-    //Auto Low Light frame Duration
+    /// Auto Low Light frame Duration
     #[strum(serialize = "ALLD", to_string = "Auto Low Light frame Duration")]
     ALLD,
 
-    //White Balance in Kelvin
+    /// White Balance in Kelvin
     #[strum(serialize = "WBAL", to_string = "White Balance in Kelvin")]
     WBAL,
-    //White Balance RGB gains
+    /// White Balance RGB gains
     #[strum(serialize = "WRGB", to_string = "White Balance RGB gains")]
     WRGB,
 
     //HERO7 Black (v1.8)
-    //Luma (Y) Average over the frame
+    /// Luma (Y) Average over the frame
     #[strum(serialize = "YAVG", to_string = "Luma (Y) Average over the frame")]
     YAVG,
 
-    // Predominant hues over the frame
+    /// Predominant hues over the frame
     // struct ubyte hue, ubyte weight, HSV_Hue = hue x 360/255
     #[strum(serialize = "HUES", to_string = "Predominant hues over the frame")]
     HUES,
 
-    //Image uniformity
+    /// Image uniformity
     #[strum(serialize = "UNIF", to_string = "Image uniformity")]
     UNIF,
 
-    //Scene classifier in probabilities
-    //FourCC scenes: SNOW, URBAn, INDOor, WATR, VEGEtation, BEACh
+    /// Scene classifier in probabilities
+    /// FourCC scenes: SNOW, URBAn, INDOor, WATR, VEGEtation, BEACh
     #[strum(serialize = "SCEN", to_string = "Scene classifier")]
     SCEN,
 
-    //Sensor Read Out Time
+    /// Sensor Read Out Time
     #[strum(serialize = "SROT", to_string = "Sensor Read Out Time")]
     SROT,
 
     // HERO8 Black (v2.5)
-
-    //Camera ORIentation
-    // Quaternions for the camera orientation since capture start
+    /// Camera ORIentation
+    /// Quaternions for the camera orientation since capture start
     #[strum(serialize = "CORI", to_string = "Camera Orientation")]
     CORI,
 
-    #[strum(
-        serialize = "ORIO",
-        to_string = "UNDOCUMENTED: ORIO Camera Orientation ???"
-    )]
-    ORIO,
-    #[strum(
-        serialize = "ORIN",
-        to_string = "UNDOCUMENTED: ORIN Camera Orientation ???"
-    )]
-    ORIN,
-
-    //Image ORIentation
-    //Quaternions for the image orientation relative to the camera body
+    // #[strum(
+    //     serialize = "ORIO",
+    //     to_string = "UNDOCUMENTED: ORIO Camera Orientation ???"
+    // )]
+    // ORIO,
+    // #[strum(
+    //     serialize = "ORIN",
+    //     to_string = "UNDOCUMENTED: ORIN Camera Orientation ???"
+    // )]
+    // ORIN,
+    /// Image ORIentation
+    /// Quaternions for the image orientation relative to the camera body
     #[strum(serialize = "IORI", to_string = "Image Orientation")]
     IORI,
-    //GRAvity Vector
-    //Vector for the direction for gravitiy
+
+    ///GRAvity Vector
+    ///Vector for the direction for gravitiy
     #[strum(serialize = "GRAV", to_string = "Gravity Vector")]
     GRAV,
-    //Wind Processing
-    //marks whether wind processing is active
+
+    ///Wind Processing
+    ///marks whether wind processing is active
     #[strum(serialize = "WNDM", to_string = "Wind Processing")]
     WNDM,
-    //Microphone is WET
-    //marks whether some of the microphones are wet
+
+    ///Microphone is WET
+    ///marks whether some of the microphones are wet
     #[strum(serialize = "MWET", to_string = "Microphone is Wet")]
     MWET,
 
-    //Audio Levels
-    //RMS and peak audio levels in dBFS
+    /// Audio Levels
+    /// RMS and peak audio levels in dBFS
     #[strum(serialize = "AALP", to_string = "Audio Levels (dBFS)")]
     AALP,
 
     //GoPro MAX (v2.0)
-    //1-D depth map for the objects seen by the two lenses
+    /// 1-D depth map for the objects seen by the two lenses
     #[strum(serialize = "DISP", to_string = "Depth Map")]
     DISP,
 
     //HERO9
-
-    //Main video frame SKiP
+    /// Main video frame SKiP
     #[strum(serialize = "MSKP", to_string = "Main video frame skip")]
     MSKP,
-    //Low res video frame SKiP
+    /// Low res video frame SKiP
     #[strum(serialize = "LSKP", to_string = "Low res video frame skip")]
     LSKP,
 
     //HERO11
-    //lat, long, alt, 2D speed, 3D speed, days since 2000, secs since midnight (ms precision), DOP, fix (0, 2D or 3D)
-    //improved precision over GPS5 for time and fix information
+    /// GPS lat, long, alt, 2D speed, 3D speed, days since 2000, secs since midnight (ms precision), DOP, fix (0, 2D or 3D)
+    /// improved precision over GPS5 for time and fix information
     //GPS5 deprecated
     #[strum(serialize = "GPS9", to_string = "GPS 9")]
     GPS9,
@@ -456,21 +457,22 @@ pub enum FourCC {
     #[strum(serialize = "HMMT", to_string = "HMMT UNDOCUMENTED HiLights ???")]
     HMMT,
 
-    #[strum(serialize = "HLMT", to_string = "HLMT UNDOCUMENTED HiLights ???")]
-    HLMT,
+    // #[strum(serialize = "HLMT", to_string = "HLMT UNDOCUMENTED HiLights ???")]
+    // HLMT,
+    //
+    // #[strum(serialize = "MANL", to_string = "MANL UNDOCUMENTED Manual Label ???")]
+    // MANL,
 
-    #[strum(serialize = "MANL", to_string = "MANL UNDOCUMENTED Manual Label ???")]
-    MANL,
+    // #[strum(serialize = "MTRX", to_string = "MTRX UNDOCUMENTED Tracks ???")]
+    // MTRX,
 
-    #[strum(serialize = "MTRX", to_string = "MTRX UNDOCUMENTED Tracks ???")]
-    MTRX,
-
-    #[strum(serialize = "AGST", to_string = "AGST UNDOCUMENTED ???")]
-    AGST,
-
+    // #[strum(serialize = "AGST", to_string = "AGST UNDOCUMENTED ???")]
+    // AGST,
+    /// Battery Status
     #[strum(serialize = "KBAT", to_string = "KBAT UNDOCUMENTED Battery Status ???")]
     KBAT,
 
+    /// Other custom metadata
     #[strum(default)]
     Other(String),
 }
