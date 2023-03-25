@@ -20,8 +20,8 @@
 #This is required because on our development machines we mirror crates-io to speed up builds, and allow offline development
 CARGO_MAKE_CARGO_PUBLISH_FLAGS="--registry crates-io"
 #CARGO_MAKE_GIT_PUSH_ARGS
-GITHUB_API_TOKEN=""
-GITHUB_REPO_NAME=""
+#GITHUB_API_TOKEN=""
+#GITHUB_REPO_NAME=""
 CARGO_MAKE_GIT_BRANCH="main"
 
 [tasks.generate-readme]
