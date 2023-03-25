@@ -1,0 +1,48 @@
+# Useful commands
+
+# Watches for any file change and if any change is detected, it will invoke the default flow.
+# cargo watch-flow
+
+# Full sanity testing flow
+# cargo make build-flow
+
+# If env vars set can integrate with git
+# cargo make build-publish-flow
+#  "COMMIT_MSG",
+#  "GITHUB_API_TOKEN",
+#  "GITHUB_REPO_NAME",
+#   set "CARGO_MAKE_GIT_BRANCH" if not "master"
+
+# Run git add .
+# cargo make git-add
+
+[env]
+#This is required because on our development machines we mirror crates-io to speed up builds, and allow offline development
+CARGO_MAKE_CARGO_PUBLISH_FLAGS="--registry crates-io"
+#CARGO_MAKE_GIT_PUSH_ARGS
+GITHUB_API_TOKEN=""
+GITHUB_REPO_NAME=""
+
+[tasks.generate-readme]
+command = "cargo"
+args = [ "readme","-o","README.md" ]
+
+[tasks.pre-publish]
+dependencies = ["generate-readme"]
+
+[tasks.build-publish-flow]
+dependencies = [
+    "delete-lock",
+    "build-flow",
+    "build-file-increment-flow",
+    "git-add",
+    "git-status",
+    "git-commit-message",
+    "git-push",
+    "git-delete-merged-branches",
+    "github-publish-custom-name",
+    "publish-flow",
+    "upload-artifacts",
+    "git-pull",
+]
+

@@ -1,8 +1,8 @@
-//! ## Parser and Writer for GoPro Metadata Format (GPMF)
+//! # Parser and Writer for GoPro Metadata Format (GPMF)
 //!
 //! WIP: Currently successfully parses all raw test data and logs the results.
 //!
-//! ## Design Goals
+//! # Design Goals
 //!
 //! * Linux Philosophy, each tool does one thing and does it well
 //! * Can be integrated in other tools, and in other languages than Rust
@@ -17,11 +17,11 @@
 //! * Gracefully recover from errors
 //! * Handle unknown tags
 //!
-//! ## Reporting Issues
+//! # Reporting Issues
 //!
 //! If you have a file that is not handled please submit an issue, attaching the raw metadata file
 //!
-//! ## Feature Roadmap
+//! # Feature Roadmap
 //!
 //! * [x] Parser (WIP) at present just prints out data
 //! * [ ] Create a structure to hold data
