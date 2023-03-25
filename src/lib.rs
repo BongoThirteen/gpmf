@@ -12,10 +12,11 @@
 //! * Memory safe parser
 //! * Zero security vulnerabilities. Avoid problems found in other tools e.g.: [GoPro GPMF-parser Vulnerabilities](https://blog.inhq.net/posts/gopro-gpmf-parser-vuln-1/)
 //! * Never generate exceptions, i.e.: Should never panic.
-//! * Should pass fuzz tests i.e.: handle junk data
+//! * Should pass fuzz tests i.e.: handle corrupt or junk data
 //! * Should avoid DOS attacks. Possibly Add max buffer lengths.
 //! * Gracefully recover from errors
 //! * Handle unknown tags
+//! * Roundtrip sensor data (without loss of precision or changing data type)
 //!
 //! # Reporting Issues
 //!
@@ -28,15 +29,59 @@
 //! * [ ] Handle Scale
 //! * [ ] Handle multiple sensor data 'mp4 boxes/atoms', as contained in mp4 file
 //! * [ ] Return data in chronological order using Iterator and Tournament Tree
-//! * [ ] Stream data
-//! * [ ] Handle image exif data
+//! * [ ] Extract metadata from Live Stream via WiFi and Rtmp Url in realtime
+//! * [ ] Handle exif data in images
 //! * [ ] Writer
+//! * [ ] Roundtrip sensor data
+//!
+//! # Example
+//!
+//! ```
+//! use std::path::Path;
+//! use gpmf::byteorder_gpmf::parse_gpmf;
+//!
+//! fn main() -> anyhow::Result<()> {
+//!     let path = Path::new("samples/karma.raw");
+//!     let text = std::fs::read(path)?;
+//!     let res=parse_gpmf(text.as_slice())?;
+//!     println!("{:?}",res);
+//!     Ok(())
+//! }
+//! ```
+//!
+//! # Example with Logging
+//!
+//! ```
+//! use std::path::Path;
+//! use gpmf::byteorder_gpmf::parse_gpmf;
+//! use tracing::Level;
+//! use tracing_subscriber::FmtSubscriber;
+//!
+//! fn main() -> anyhow::Result<()> {
+//!     let subscriber = FmtSubscriber::builder()
+//!         .with_max_level(Level::DEBUG)
+//!         .finish();
+//!     tracing::subscriber::set_global_default(subscriber)?;
+//!
+//!     let path = Path::new("samples/Fusion.raw");
+//!     let text = std::fs::read(path)?;
+//!     let res=parse_gpmf(text.as_slice())?;
+//!     println!("{:?}",res);
+//!     Ok(())
+//! }
+//! ```
 
-#![warn(missing_docs)]
+//#![nopanic]
+#![warn(
+    missing_docs,
+    clippy::missing_docs_in_private_items,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc
+)]
 #![feature(cursor_remaining)]
 #![feature(buf_read_has_data_left)]
 
-mod byteorder_gpmf;
+pub mod byteorder_gpmf;
 
 use chrono::{DateTime, Utc};
 use fixed::types::{I16F16, I32F32};
@@ -47,16 +92,23 @@ use tracing::{debug, enabled, error, info, span, trace, warn, Level};
 
 const DATE_FORMAT: &str = "%y%m%d%H%M%S%.3f";
 
+/// Entry
+pub enum Entry {
+    /// Simple Entry
+    Simgle(KeyValue),
+    /// Sequence
+    Seq(Vec<KeyValue>),
+}
+
 /// Key Value struct (not used at present)
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KeyValue {
-    key: FourCC,
-    //typ:Type,
+    key: Tag,
     value: Value,
 }
 
 /// The data type of the sensor data
-#[derive(Debug, PartialEq, Eq, EnumIter, EnumString, Display, TryFromPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, EnumString, Display, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Type {
     /// | **b** | single byte signed integer | int8\_t | -128 to 127 |
@@ -150,7 +202,7 @@ pub enum Model {
 }
 
 /// The value of the data,
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     ///| **b** | single byte signed integer | int8\_t | -128 to 127 |
     I8(i8),
@@ -165,7 +217,7 @@ pub enum Value {
     /// | **f** | 32-bit float (IEEE 754) | float |   |
     F32(f32),
     /// | **F** | 32-bit four character key -- FourCC | char fourcc\[4\] |   |
-    FourCC(FourCC),
+    Tag(Tag),
     /// | **G** | 128-bit ID (like UUID) | uint8\_t guid\[16\] |   |
     U128(u128),
     /// | **j** | 64-bit signed unsigned number | int64\_t |   |
@@ -186,10 +238,17 @@ pub enum Value {
     U16(u16),
     /// | **U** | UTC Date and Time string | char utcdate\[16\] | Date + UTC Time format yymmddhhmmss.sss - (years 20xx covered) |
     Date(DateTime<Utc>),
+
     /// | **?** | data structure is complex | TYPE | Structure is defined with a preceding TYPE |
-    Complex(Vec<Value>),
+    Complex(Vec<Vec<Value>>),
     /// | **null** | Nested metadata | uint32\_t | The data within is GPMF structured KLV data |
     Nested(Vec<KeyValue>),
+    /// Simple
+    Simple(Vec<Vec<Value>>),
+    /// Type
+    Type(Vec<Type>),
+    /// Strings
+    Strings(Vec<String>),
 }
 
 impl Value {
@@ -202,7 +261,7 @@ impl Value {
             Value::String(_) => Type::Char,
             Value::F64(_) => Type::F64,
             Value::F32(_) => Type::F32,
-            Value::FourCC(_) => Type::FourCC,
+            Value::Tag(_) => Type::FourCC,
             Value::U128(_) => Type::U128,
             Value::I64(_) => Type::I64,
             Value::U64(_) => Type::U64,
@@ -215,6 +274,7 @@ impl Value {
             Value::Date(_) => Type::Date,
             Value::Complex(_) => Type::Complex,
             Value::Nested(_) => Type::Nested,
+            _ => unimplemented!(),
         }
     }
 }
@@ -223,8 +283,8 @@ impl Value {
 ///
 /// There are some undocumented tags present in GPMF data.
 /// Currently warnings are logged for unsupported tags.
-#[derive(Debug, PartialEq, EnumString, EnumIter, Display)]
-pub enum FourCC {
+#[derive(Debug, Clone, PartialEq, EnumString, EnumIter, Display)]
+pub enum Tag {
     ///unique device source for metadata
     /// Each connected device starts with DEVC. A GoPro camera or Karma drone would have their own DEVC for nested metadata to follow. |
     #[strum(serialize = "DEVC", to_string = "Device")]

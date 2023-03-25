@@ -1,4 +1,6 @@
-use crate::FourCC;
+//! This module implements the GPMF parser using the byteorder crate
+
+use crate::{KeyValue, Tag};
 use crate::{Type, Value, DATE_FORMAT};
 use byteorder::{BigEndian, ReadBytesExt};
 use chrono::{TimeZone, Utc};
@@ -18,8 +20,8 @@ impl Type {
             Type::F64 => Value::F64(input.read_f64::<BigEndian>()?),
             Type::F32 => Value::F32(input.read_f32::<BigEndian>()?),
             Type::FourCC => {
-                let fourcc = read_fourcc(input)?;
-                Value::FourCC(fourcc)
+                let fourcc = read_tag(input)?;
+                Value::Tag(fourcc)
             }
             Type::U128 => Value::U128(input.read_u128::<BigEndian>()?),
             Type::I64 => Value::I64(input.read_i64::<BigEndian>()?),
@@ -56,29 +58,31 @@ impl Type {
 }
 
 /// Read the FourCC field using the byteorder crate
-fn read_fourcc(input: &mut Cursor<&[u8]>) -> anyhow::Result<FourCC> {
+fn read_tag(input: &mut Cursor<&[u8]>) -> anyhow::Result<Tag> {
     let mut fourcc = [0u8; 4];
     input.read_exact(fourcc.as_mut_slice())?;
-    let fourcc_string: String = fourcc.iter().map(|c| *c as char).collect();
-    let fourcc = FourCC::try_from(fourcc_string.as_str())?;
-    debug!("FourCC {} ({:?})", fourcc_string, fourcc);
-    if let FourCC::Other(other) = &fourcc {
-        warn!("Unsupported FourCC key found {}", other);
+    let tag_string: String = fourcc.iter().map(|c| *c as char).collect();
+    let tag = Tag::try_from(tag_string.as_str())?;
+    debug!("Tag {} ({:?})", tag_string, tag);
+    if let Tag::Other(other) = &tag {
+        warn!("Unsupported tag found {}", other);
     }
-    Ok(fourcc)
+    Ok(tag)
 }
 
 /// Parse the GPMF stream using the bytorder crate
 /// This function will be called recursively to handle nested data structures
-pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
+pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<Vec<KeyValue>> {
     //the complex data structure types
     let mut type_def: Option<Vec<Type>> = None;
+
+    let mut res = Vec::new();
 
     //the cursor to handle reading from the slice
     let mut input = Cursor::new(input);
 
     while input.has_data_left()? {
-        let fourcc = read_fourcc(&mut input)?;
+        let tag = read_tag(&mut input)?;
         let type_u8 = input.read_u8()?;
         debug!("Type_u8 {}", type_u8);
 
@@ -117,20 +121,21 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
             padding_bytes
         );
 
-        match typ {
+        let value = match typ {
             Type::Char => {
                 if num_elements == 1 {
                     // special case for repeat of 1 element
                     let mut vec = Vec::new();
                     let _take = input.by_ref().take(repeat as u64).read_to_end(&mut vec)?;
 
-                    if fourcc != FourCC::TYPE {
+                    if tag != Tag::TYPE {
                         let v: String = vec
                             .into_iter()
                             .take_while(|b| *b != 0)
                             .map(|b| b as char)
                             .collect();
                         debug!("char/string {:?}", v);
+                        Value::String(v)
                     } else {
                         let v: Vec<_> = vec
                             .into_iter()
@@ -138,9 +143,11 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
                             .map(|type_u8| Type::try_from(type_u8).unwrap())
                             .collect();
                         info!("TYPE def types {:?}", v);
-                        type_def = Some(v);
+                        type_def = Some(v.clone());
+                        Value::Type(v)
                     }
                 } else {
+                    let mut seq = Vec::new();
                     for i in 0..repeat {
                         let mut vec = Vec::new();
                         let _take = input
@@ -160,7 +167,9 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
                             .map(|b| b as char)
                             .collect();
                         debug!("{}: char/string {:?}", i, v);
+                        seq.push(v);
                     }
+                    Value::Strings(seq)
                 }
             }
             Type::Complex => {
@@ -168,14 +177,17 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
                     .as_ref()
                     .ok_or(anyhow::Error::msg("TYPE must be set"))?;
                 //TODO assert_eq!(num_elements,type_def.len());
-                let mut vec = Vec::new();
+                let mut seq = Vec::new();
                 for i in 0..repeat {
+                    let mut complex = Vec::new();
                     for t in type_def {
                         let v = t.read(&mut input)?;
-                        vec.push(v);
+                        complex.push(v);
                     }
-                    info!("{}: Complex Type {:?}", i, vec);
+                    info!("{}: Complex Type {:?}", i, complex);
+                    seq.push(complex);
                 }
+                Value::Complex(seq)
             }
             Type::Nested => {
                 let offset = input.position();
@@ -185,11 +197,13 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
 
                 let next = &input.remaining_slice()[..num_bytes];
 
-                parse_gpmf(next)?;
+                let nested = parse_gpmf(next)?;
+                Value::Nested(nested)
             }
 
             //Handle other types
             t => {
+                let mut simple = Vec::new();
                 for i in 0..repeat {
                     let mut vec = Vec::new();
                     for _j in 0..num_elements {
@@ -197,9 +211,16 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
                         vec.push(v);
                     }
                     debug!("{}: {:?}", i, vec);
+                    simple.push(vec)
                 }
+                Value::Simple(simple)
             }
-        }
+        };
+
+        let key_value = KeyValue { key: tag, value };
+
+        res.push(key_value);
+
         if padding_bytes > 0 {
             debug!("Skipping {} bytes", padding_bytes);
             io::copy(
@@ -208,7 +229,7 @@ pub fn parse_gpmf(input: &[u8]) -> anyhow::Result<()> {
             )?;
         }
     }
-    Ok(())
+    Ok(res)
 }
 
 #[cfg(test)]
@@ -217,40 +238,45 @@ mod tests {
     use crate::tests::setup;
     use std::path::Path;
 
-    fn read_file(path: &str) -> anyhow::Result<()> {
+    fn read_file(path: &str) -> anyhow::Result<Vec<KeyValue>> {
         setup();
         let dir = Path::new("samples");
         let path = dir.join(path);
 
         let text = std::fs::read(path)?;
 
-        parse_gpmf(text.as_slice())?;
+        let res = parse_gpmf(text.as_slice())?;
 
-        Ok(())
+        Ok(res)
     }
 
     #[test]
     fn test_byteorder_hero5() {
-        let _res = read_file("hero5.raw").unwrap();
+        let res = read_file("hero5.raw").unwrap();
+        println!("{:?}", res);
     }
 
     #[test]
     fn test_byteorder_hero6() {
-        let _res = read_file("hero6.raw").unwrap();
+        let res = read_file("hero6.raw").unwrap();
+        println!("{:?}", res);
     }
 
     #[test]
     fn test_byteorder_hero6ble() {
-        let _res = read_file("hero6+ble.raw").unwrap();
+        let res = read_file("hero6+ble.raw").unwrap();
+        println!("{:?}", res);
     }
 
     #[test]
     fn test_byteorder_fusion() {
-        let _res = read_file("Fusion.raw").unwrap();
+        let res = read_file("Fusion.raw").unwrap();
+        println!("{:?}", res);
     }
 
     #[test]
     fn test_byteorder_karma() {
-        let _res = read_file("karma.raw").unwrap();
+        let res = read_file("karma.raw").unwrap();
+        println!("{:?}", res);
     }
 }

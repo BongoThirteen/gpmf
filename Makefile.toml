@@ -1,18 +1,20 @@
 # Useful commands
 
-# cargo make
+# Development Workflow
+# $ cargo make
 
 # Watches for any file change and if any change is detected, it will invoke the default flow.
-# cargo make watch-flow
+# $ cargo make watch-flow
 
 # Full sanity testing flow
-# cargo make build-flow
+# $ cargo make build-flow
 
 # Publish
-# env COMMIT_MSG="Put your commit MESSAGE here"  cargo make build-publish-flow
+# Note: Remember to increment the crate version beforehand
+# $ env COMMIT_MSG="Put your commit MESSAGE here"  cargo make build-publish-flow
 
 # Run git add .
-# cargo make git-add
+# $ cargo make git-add
 
 [env]
 #This is required because on our development machines we mirror crates-io to speed up builds, and allow offline development

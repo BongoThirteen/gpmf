@@ -18,6 +18,7 @@ WIP: Currently successfully parses all raw test data and logs the results.
 * Should avoid DOS attacks. Possibly Add max buffer lengths.
 * Gracefully recover from errors
 * Handle unknown tags
+* Roundtrip sensor data (without loss of precision or changing data type)
 
 ## Reporting Issues
 
@@ -30,8 +31,50 @@ If you have a file that is not handled please submit an issue, attaching the raw
 * [ ] Handle Scale
 * [ ] Handle multiple sensor data 'mp4 boxes/atoms', as contained in mp4 file
 * [ ] Return data in chronological order using Iterator and Tournament Tree
-* [ ] Stream data
-* [ ] Handle image exif data
+* [ ] Extract metadata from Live Stream via WiFi and Rtmp Url in realtime
+* [ ] Handle exif data in images
 * [ ] Writer
+* [ ] Roundtrip sensor data
+
+## Example
+
+```rust
+use std::io;
+use std::path::Path;
+use gpmf::byteorder_gpmf::parse_gpmf;
+
+fn main() -> anyhow::Result<()> {
+    let path = Path::new("samples/karma.raw");
+    let text = std::fs::read(path)?;
+    let res=parse_gpmf(text.as_slice())?;
+    println!("{:?}",res);
+    Ok(())
+}
+```
+
+## Example with Logging
+
+```rust
+use std::io;
+use std::path::Path;
+use gpmf::byteorder_gpmf::parse_gpmf;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
+
+fn main() -> anyhow::Result<()> {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::TRACE)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)
+                .expect("setting default subscriber failed");
+
+    let path = Path::new("samples/Fusion.raw");
+    let text = std::fs::read(path)?;
+    let res=parse_gpmf(text.as_slice())?;
+    println!("{:?}",res);
+    Ok(())
+}
+```
 
 License: MIT OR Apache-2.0
